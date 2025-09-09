@@ -20,8 +20,8 @@ router.get('/', async (req, res) => {
     'id',
     'RequestMethod',
     'RequestPath',
-    'requestUser-Agent',
-    'requestX-Forwarded-Proto',
+    'request_User-Agent',
+    'request_X-Forwarded-Proto',
     'RetryAttempts',
     'ServiceName',
     'StartUTC',
@@ -122,7 +122,12 @@ router.get('/', async (req, res) => {
   });
 });
 
-router.get('/stats', async (_req, res) => {
+router.get('/stats', async (req, res) => {
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+  if (isNaN(limit) || limit <= 0 || limit > 100) {
+    return res.status(400).json({ error: 'Invalid limit parameter. Must be a number between 1 and 100.' });
+  }
+
   const totalRequests = await db.selectFrom('logs').select(db.fn.count('id').as('count')).executeTakeFirst();
   const totalBytes = await db
     .selectFrom('logs')
@@ -143,15 +148,37 @@ router.get('/stats', async (_req, res) => {
     .select(['ClientHost', db.fn.count('id').as('count')])
     .groupBy('ClientHost')
     .orderBy('count', 'desc')
-    .limit(10)
+    .limit(limit)
     .execute();
+  const requestsByPaths = await db
+    .selectFrom('logs')
+    .select(['RequestPath', db.fn.count('id').as('count')])
+    .groupBy('RequestPath')
+    .orderBy('count', 'desc')
+    .limit(limit)
+    .execute();
+  const requestsByUserAgent = await db
+    .selectFrom('logs')
+    .select(['Request_User-Agent', db.fn.count('id').as('count')])
+    .groupBy('Request_User-Agent')
+    .orderBy('count', 'desc')
+    .limit(limit)
+    .execute();
+  const averageResponseTime = await db
+    .selectFrom('logs')
+    .select(db.fn.avg('Duration').as('avg'))
+    .where('request_X-Forwarded-Proto', '!=', 'wss')
+    .executeTakeFirst();
 
   res.json({
     totalRequests: totalRequests?.count || 0,
     totalBytes: totalBytes?.sum || 0,
+    averageResponseTime: averageResponseTime?.avg || 0,
     requestsByStatus,
     requestsByService,
-    requestsByClients
+    requestsByClients,
+    requestsByPaths,
+    requestsByUserAgent
   });
 });
 

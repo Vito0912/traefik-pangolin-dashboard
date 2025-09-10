@@ -6,7 +6,7 @@ export interface StatsApiResponse {
   requestsByService: { ServiceName: string | undefined; count: number }[];
   requestsByClients: { ClientHost: string; count: number }[];
   requestsByPaths: { RequestPath: string; count: number }[];
-  requestsByUserAgent: { 'Request_User-Agent': string; count: number }[];
+  requestsByUserAgent: { 'request_User-Agent': string; count: number }[];
 }
 
 export interface LogEntry {
@@ -31,4 +31,9 @@ export interface LogEntry {
   'request_X-Forwarded-Proto'?: string;
   'request_X-Real-Ip'?: string;
   time: string;
+}
+
+export interface PercentageListItem {
+  name: string;
+  value: number;
 }

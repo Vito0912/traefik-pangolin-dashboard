@@ -17,6 +17,34 @@
 
           <StatsCard :value="stats.requestsByService.length" description="Total Services" />
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <PercentageList
+            title="Requests by Service"
+            :items="serviceItems"
+            :maximum="stats.totalRequests"
+          />
+
+          <PercentageList
+            title="Requests by Status Code"
+            :items="statusItems"
+            :maximum="stats.totalRequests"
+          />
+
+          <PercentageList title="Top Paths" :items="pathItems" :maximum="stats.totalRequests" />
+
+          <PercentageList
+            title="Top User Agents"
+            :items="userAgentItems"
+            :maximum="stats.totalRequests"
+          />
+
+          <PercentageList
+            title="Top Client Hosts"
+            :items="clientItems"
+            :maximum="stats.totalRequests"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -24,14 +52,66 @@
 
 <script setup lang="ts">
 import StatsCard from '@/components/StatsCard.vue'
+import PercentageList from '@/components/PercentageList.vue'
 
 import axios from 'axios'
 import { RouterLink, RouterView } from 'vue-router'
-import { ref, onMounted } from 'vue'
-import type { StatsApiResponse, LogEntry } from '../../../types/apiResponses'
+import { ref, onMounted, computed } from 'vue'
+import type { StatsApiResponse, LogEntry, PercentageListItem } from '../../../types/apiResponses'
 import { io } from 'socket.io-client'
 
 const stats = ref<StatsApiResponse | null>(null)
+
+// Computed properties for PercentageList data
+const serviceItems = computed((): PercentageListItem[] => {
+  if (!stats.value) return []
+  return stats.value.requestsByService
+    .map((item) => ({
+      name: item.ServiceName || 'Unknown Service',
+      value: item.count,
+    }))
+    .sort((a, b) => b.value - a.value)
+})
+
+const statusItems = computed((): PercentageListItem[] => {
+  if (!stats.value) return []
+  return stats.value.requestsByStatus
+    .map((item) => ({
+      name: `HTTP ${item.DownstreamStatus}`,
+      value: item.count,
+    }))
+    .sort((a, b) => b.value - a.value)
+})
+
+const clientItems = computed((): PercentageListItem[] => {
+  if (!stats.value) return []
+  return stats.value.requestsByClients
+    .map((item) => ({
+      name: item.ClientHost,
+      value: item.count,
+    }))
+    .sort((a, b) => b.value - a.value)
+})
+
+const pathItems = computed((): PercentageListItem[] => {
+  if (!stats.value) return []
+  return stats.value.requestsByPaths
+    .map((item) => ({
+      name: item.RequestPath,
+      value: item.count,
+    }))
+    .sort((a, b) => b.value - a.value)
+})
+
+const userAgentItems = computed((): PercentageListItem[] => {
+  if (!stats.value) return []
+  return stats.value.requestsByUserAgent
+    .map((item) => ({
+      name: item['request_User-Agent'],
+      value: item.count,
+    }))
+    .sort((a, b) => b.value - a.value)
+})
 
 onMounted(async () => {
   try {
@@ -72,7 +152,7 @@ socket.on('newLogs', (data: LogEntry[]) => {
   const clientMap = new Map(stats.value.requestsByClients.map((c) => [c.ClientHost, c.count]))
   const pathMap = new Map(stats.value.requestsByPaths.map((p) => [p.RequestPath, p.count]))
   const userAgentMap = new Map(
-    stats.value.requestsByUserAgent.map((u) => [u['Request_User-Agent'], u.count]),
+    stats.value.requestsByUserAgent.map((u) => [u['request_User-Agent'], u.count]),
   )
 
   data.forEach((log) => {
@@ -84,9 +164,15 @@ socket.on('newLogs', (data: LogEntry[]) => {
 
     statusMap.set(status, (statusMap.get(status) || 0) + 1)
     serviceMap.set(service, (serviceMap.get(service) || 0) + 1)
-    clientMap.set(client, (clientMap.get(client) || 0) + 1)
-    pathMap.set(path, (pathMap.get(path) || 0) + 1)
-    userAgentMap.set(userAgent, (userAgentMap.get(userAgent) || 0) + 1)
+    if (clientMap.get(client) !== undefined) {
+      clientMap.set(client, (clientMap.get(client) || 0) + 1)
+    }
+    if (pathMap.get(path) !== undefined) {
+      pathMap.set(path, (pathMap.get(path) || 0) + 1)
+    }
+    if (userAgentMap.get(userAgent) !== undefined) {
+      userAgentMap.set(userAgent, (userAgentMap.get(userAgent) || 0) + 1)
+    }
   })
 
   const updatedRequestsByStatus = Array.from(statusMap.entries()).map(([status, count]) => ({
@@ -111,7 +197,7 @@ socket.on('newLogs', (data: LogEntry[]) => {
 
   const updatedRequestsByUserAgent = Array.from(userAgentMap.entries()).map(
     ([userAgent, count]) => ({
-      'Request_User-Agent': userAgent,
+      'request_User-Agent': userAgent,
       count,
     }),
   )

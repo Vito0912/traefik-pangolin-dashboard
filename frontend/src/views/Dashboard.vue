@@ -45,6 +45,11 @@
             :maximum="stats.totalRequests"
           />
         </div>
+
+        <!-- Log Table Section -->
+        <div class="mt-8">
+          <LogTable :logs="logs" title="Recent Log Entries" />
+        </div>
       </div>
     </div>
   </div>
@@ -53,6 +58,7 @@
 <script setup lang="ts">
 import StatsCard from '@/components/StatsCard.vue'
 import PercentageList from '@/components/PercentageList.vue'
+import LogTable from '@/components/LogTable.vue'
 
 import axios from 'axios'
 import { RouterLink, RouterView } from 'vue-router'
@@ -61,6 +67,7 @@ import type { StatsApiResponse, LogEntry, PercentageListItem } from '../../../ty
 import { io } from 'socket.io-client'
 
 const stats = ref<StatsApiResponse | null>(null)
+const logs = ref<LogEntry[]>([])
 
 // Computed properties for PercentageList data
 const serviceItems = computed((): PercentageListItem[] => {
@@ -116,8 +123,9 @@ const userAgentItems = computed((): PercentageListItem[] => {
 onMounted(async () => {
   try {
     stats.value = (await axios.get('/api/logs/stats')).data
+    logs.value = (await axios.get('/api/logs?limit=250')).data.logs
   } catch (error) {
-    console.error('Error fetching stats:', error)
+    console.error('Error fetching data:', error)
   }
 })
 
@@ -127,6 +135,9 @@ socket.on('connect', () => {
 })
 socket.on('newLogs', (data: LogEntry[]) => {
   if (!stats.value) return
+
+
+  logs.value = [...data, ...logs.value].slice(0, 2500)
 
   const newRequests = data.length
   const newBytes = data.reduce(

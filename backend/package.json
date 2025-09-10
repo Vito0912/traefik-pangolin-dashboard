@@ -8,7 +8,10 @@
     "migration:up": "tsx src/db/migration.ts up",
     "migration:down": "tsx src/db/migration.ts down",
     "migration:codegen": "kysely-codegen --dialect=sqlite3 --url=./src/db/db/db.sqlite --camel-case --out-file=./src/db/db.d.ts",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "build:full": "cd ../frontend && npm run build && cd ../backend && npm run build"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +19,7 @@
   "dependencies": {
     "@types/socket.io": "^3.0.1",
     "better-sqlite3": "^12.2.0",
+    "kysely-migration-cli": "^0.4.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
@@ -27,7 +31,6 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.3.1",
     "kysely-codegen": "^0.19.0",
-    "kysely-migration-cli": "^0.4.2",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

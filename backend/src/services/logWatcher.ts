@@ -3,7 +3,7 @@ import * as path from 'path';
 import { sql } from 'kysely';
 import db from '../db/db';
 import { socketService } from './socketService';
-import type { LogEntry } from '../../../types/apiResponses';
+import type { LogEntry } from '../types/apiResponses';
 
 class LogWatcher {
   private logPath = path.join(process.cwd(), 'logs', 'access.log');
@@ -120,8 +120,6 @@ class LogWatcher {
   }
 
   private async insertLogsInChunks(entries: LogEntry[]) {
-    // if in development mode, add random new logs
-    console.log(process.env.NODE_ENV);
     if (process.env.NODE_ENV !== 'production') {
       const randomLogs = await db
         .selectFrom('logs')

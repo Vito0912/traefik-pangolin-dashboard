@@ -115,13 +115,13 @@ const userAgentItems = computed((): PercentageListItem[] => {
 
 onMounted(async () => {
   try {
-    stats.value = (await axios.get('http://127.0.0.1:3000/api/logs/stats')).data
+    stats.value = (await axios.get('/api/logs/stats')).data
   } catch (error) {
     console.error('Error fetching stats:', error)
   }
 })
 
-const socket = io('http://127.0.0.1:3000')
+const socket = io()
 socket.on('connect', () => {
   console.log('Connected to WebSocket server')
 })

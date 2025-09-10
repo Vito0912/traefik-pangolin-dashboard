@@ -157,12 +157,10 @@ class LogWatcher {
       await db.insertInto('logs').values(chunk).execute();
 
       processed += chunk.length;
-      if (processed % 1000 === 0 || processed === dbEntries.length) {
+      if (processed % 1000 === 0) {
         console.log(`Processed ${processed}/${dbEntries.length} logs`);
       }
     }
-
-    socketService.emitNewLogs(dbEntries);
   }
 
   stop() {

@@ -128,8 +128,6 @@ socket.on('connect', () => {
 socket.on('newLogs', (data: LogEntry[]) => {
   if (!stats.value) return
 
-  console.log('Received new logs:', data)
-
   const newRequests = data.length
   const newBytes = data.reduce(
     (sum: number, log: LogEntry) => sum + (log.DownstreamContentSize || 0),
@@ -201,8 +199,6 @@ socket.on('newLogs', (data: LogEntry[]) => {
       count,
     }),
   )
-
-  console.log(updatedRequestsByService)
 
   stats.value = {
     ...stats.value,

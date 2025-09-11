@@ -7,6 +7,7 @@ export interface StatsApiResponse {
   requestsByClients: { ClientHost: string; count: number }[];
   requestsByPaths: { RequestPath: string; count: number }[];
   requestsByUserAgent: { 'request_User-Agent': string; count: number }[];
+  requestsByMethod: { RequestMethod: string; count: number }[];
 }
 
 export interface LogEntry {
@@ -49,4 +50,19 @@ export interface Pagination {
 export interface LogsApiResponse {
   logs: LogEntry[];
   pagination: Pagination;
+}
+
+export interface FilterValues {
+  ClientHost: string[];
+  not_ClientHost: string[];
+  RequestMethod: string[];
+  not_RequestMethod: string[];
+  RequestPath: string[];
+  not_RequestPath: string[];
+  DownstreamStatus: string[];
+  not_DownstreamStatus: string[];
+  ServiceName: string[];
+  not_ServiceName: string[];
+  requestUserAgent: string[];
+  not_requestUserAgent: string[];
 }

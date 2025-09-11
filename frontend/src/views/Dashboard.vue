@@ -49,6 +49,8 @@
         </div>
 
         <div class="mt-8">
+          <LogFilter :stats="stats" @filter-change="handleFilterChange" />
+
           <LogTable
             :logs="logs"
             title="Recent Log Entries"
@@ -130,7 +132,9 @@
 import StatsCard from '@/components/StatsCard.vue'
 import PercentageList from '@/components/PercentageList.vue'
 import LogTable from '@/components/LogTable.vue'
+import LogFilter from '@/components/LogFilter.vue'
 import StatusCodePieChart from '@/components/StatusCodePieChart.vue'
+import type { FilterValues } from '../../../types/apiResponses'
 
 import axios from 'axios'
 import { RouterLink, RouterView } from 'vue-router'
@@ -151,6 +155,26 @@ const sortBy = ref<string[]>(['time'])
 const sortDirection = ref<string[]>(['desc'])
 const currentPage = ref<number>(1)
 const pageSize = ref<number>(100)
+const activeFilters = ref<FilterValues>({
+  ClientHost: [],
+  not_ClientHost: [],
+  RequestMethod: [],
+  not_RequestMethod: [],
+  RequestPath: [],
+  not_RequestPath: [],
+  DownstreamStatus: [],
+  not_DownstreamStatus: [],
+  ServiceName: [],
+  not_ServiceName: [],
+  requestUserAgent: [],
+  not_requestUserAgent: [],
+})
+
+const handleFilterChange = (filters: FilterValues) => {
+  activeFilters.value = filters
+  currentPage.value = 1
+  fetchLogs()
+}
 
 const handleSort = (payload: { sortBy: string[]; sortDirection: string[] }) => {
   sortBy.value = payload.sortBy
@@ -178,6 +202,23 @@ const fetchLogs = async () => {
       params.append('sortBy', sortBy.value.join(','))
       params.append('direction', sortDirection.value.join(','))
     }
+    Object.entries(activeFilters.value).forEach(([key, values]) => {
+      if (values.length > 0) {
+        let apiKey = key
+        if (key === 'requestUserAgent') {
+          apiKey = 'requestUser-Agent'
+        } else if (key === 'not_requestUserAgent') {
+          apiKey = 'not_requestUser-Agent'
+        }
+
+        let apiValues = values
+        if ((key === 'ServiceName' || key === 'not_ServiceName') && values.includes('Invalid')) {
+          apiValues = values.map((value) => (value === 'Invalid' ? 'null' : value))
+        }
+
+        params.append(apiKey, apiValues.join(','))
+      }
+    })
 
     const response = (await axios.get(`/api/logs?${params.toString()}`)).data as LogsApiResponse
     logs.value = response.logs
@@ -288,6 +329,13 @@ socket.on('connect', async () => {
 })
 socket.on('newLogs', (data: LogEntry[]) => {
   if (!stats.value) return
+
+  // To prevent to a pagination lag, the log table only get's updated if only sorted by time descending and on the first page
+  // TODO: Actually handle the insertion with filters
+  if (sortBy.value[0] === 'time' && sortDirection.value[0] === 'desc' && currentPage.value === 1) {
+    logs.value = [...data, ...logs.value].slice(0, pageSize.value)
+    console.log(`Received ${data.length} new logs via WebSocket`)
+  }
 
   const newRequests = data.length
   const newBytes = data.reduce(

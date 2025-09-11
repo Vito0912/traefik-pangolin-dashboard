@@ -84,10 +84,37 @@ router.get('/', async (req, res) => {
       const values = req.query[key];
 
       if (typeof values === 'string') {
-        for (const value of values.split(',')) {
-          query = query.where(key, '=', value);
-          totalQuery = totalQuery.where(key, '=', value);
-        }
+        const valueArray = values.split(',');
+        const hasNullValue = valueArray.includes('null');
+        const nonNullValues = valueArray.filter((v) => v !== 'null');
+
+        query = query.where((eb) => {
+          const conditions = [];
+
+          if (hasNullValue) {
+            conditions.push(eb(key, 'is', null));
+          }
+
+          if (nonNullValues.length > 0) {
+            conditions.push(eb(key, 'in', nonNullValues));
+          }
+
+          return eb.or(conditions);
+        });
+
+        totalQuery = totalQuery.where((eb) => {
+          const conditions = [];
+
+          if (hasNullValue) {
+            conditions.push(eb(key, 'is', null));
+          }
+
+          if (nonNullValues.length > 0) {
+            conditions.push(eb(key, 'in', nonNullValues));
+          }
+
+          return eb.or(conditions);
+        });
       }
     }
 
@@ -96,10 +123,37 @@ router.get('/', async (req, res) => {
       const value = req.query[key];
 
       if (typeof value === 'string') {
-        for (const v of value.split(',')) {
-          query = query.where(filterKey, '!=', v);
-          totalQuery = totalQuery.where(filterKey, '!=', v);
-        }
+        const valueArray = value.split(',');
+        const hasNullValue = valueArray.includes('null');
+        const nonNullValues = valueArray.filter((v) => v !== 'null');
+
+        query = query.where((eb) => {
+          const conditions = [];
+
+          if (hasNullValue && nonNullValues.length > 0) {
+            conditions.push(eb.and([eb(filterKey, 'is not', null), eb(filterKey, 'not in', nonNullValues)]));
+          } else if (hasNullValue) {
+            conditions.push(eb(filterKey, 'is not', null));
+          } else {
+            conditions.push(eb.or([eb(filterKey, 'is', null), eb(filterKey, 'not in', nonNullValues)]));
+          }
+
+          return conditions[0];
+        });
+
+        totalQuery = totalQuery.where((eb) => {
+          const conditions = [];
+
+          if (hasNullValue && nonNullValues.length > 0) {
+            conditions.push(eb.and([eb(filterKey, 'is not', null), eb(filterKey, 'not in', nonNullValues)]));
+          } else if (hasNullValue) {
+            conditions.push(eb(filterKey, 'is not', null));
+          } else {
+            conditions.push(eb.or([eb(filterKey, 'is', null), eb(filterKey, 'not in', nonNullValues)]));
+          }
+
+          return conditions[0];
+        });
       }
     }
   }
@@ -137,6 +191,11 @@ router.get('/stats', async (req, res) => {
     .selectFrom('logs')
     .select(['DownstreamStatus', db.fn.count('id').as('count')])
     .groupBy('DownstreamStatus')
+    .execute();
+  const requestsByMethod = await db
+    .selectFrom('logs')
+    .select(['RequestMethod', db.fn.count('id').as('count')])
+    .groupBy('RequestMethod')
     .execute();
   const requestsByService = await db
     .selectFrom('logs')
@@ -178,7 +237,8 @@ router.get('/stats', async (req, res) => {
     requestsByService,
     requestsByClients,
     requestsByPaths,
-    requestsByUserAgent
+    requestsByUserAgent,
+    requestsByMethod
   });
 });
 

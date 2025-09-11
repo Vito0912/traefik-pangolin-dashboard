@@ -3,7 +3,6 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import logsRouter from './routes/logs';
 import { logWatcher } from './services/logWatcher';
 import { socketService } from './services/socketService';
@@ -29,11 +28,13 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 const frontendPath = path.join(__dirname, '../../frontend/dist');
 
 if (isDevelopment) {
+  const { createProxyMiddleware } = require('http-proxy-middleware');
+
   const viteProxy = createProxyMiddleware({
     target: 'http://localhost:5173',
     changeOrigin: true,
     ws: true,
-    pathFilter: (path) => {
+    pathFilter: (path: string) => {
       return !path.startsWith('/api') && !path.startsWith('/socket.io');
     }
   });

@@ -1,93 +1,90 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+    class="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col"
   >
-    <div class="p-6">
+    <div class="p-6 flex-shrink-0">
       <h3 v-if="title" class="text-lg font-semibold text-gray-800 mb-4">{{ title }}</h3>
+    </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full table-auto">
-          <thead>
-            <tr class="border-b border-gray-200">
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Time
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Client Host
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Method
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Service
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Path
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Size
-              </th>
-              <th
-                class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Duration
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr
-              v-for="log in logs"
-              :key="`${log.time}-${log.ClientHost}-${log.RequestPath}`"
-              class="hover:bg-gray-50 transition-colors duration-150"
+    <div class="overflow-x-auto overflow-y-auto max-h-80 flex-1 px-6 pb-6">
+      <table class="min-w-full table-auto">
+        <thead>
+          <tr class="border-b border-gray-200">
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                {{ formatTime(log.time) }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700">
-                {{ log.ClientHost || '-' }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700">
-                <span
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  :class="getMethodClass(log.RequestMethod)"
-                >
-                  {{ log.RequestMethod || '-' }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700">
-                {{ log.ServiceName || '-' }}
-              </td>
-              <td
-                class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate"
-                :title="log.RequestPath"
+              Time
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Client Host
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Method
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Service
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Path
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Size
+            </th>
+            <th
+              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Duration
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr
+            v-for="log in logs"
+            :key="`${log.time}-${log.ClientHost}-${log.RequestPath}`"
+            class="hover:bg-gray-50 transition-colors duration-150"
+          >
+            <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+              {{ formatTime(log.time) }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700">
+              {{ log.ClientHost || '-' }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700">
+              <span
+                class="px-2 py-1 text-xs font-medium rounded-full"
+                :class="getMethodClass(log.RequestMethod)"
               >
-                {{ log.RequestPath || '-' }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700 text-right">
-                {{ formatBytes(log.DownstreamContentSize) }}
-              </td>
-              <td class="px-4 py-3 text-sm text-gray-700 text-right">
-                {{ formatDuration(log.Duration) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                {{ log.RequestMethod || '-' }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700">
+              {{ log.ServiceName || '-' }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" :title="log.RequestPath">
+              {{ log.RequestPath || '-' }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 text-right">
+              {{ formatBytes(log.DownstreamContentSize) }}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700 text-right">
+              {{ formatDuration(log.Duration) }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-        <div v-if="logs.length === 0" class="text-center py-8">
-          <span class="text-gray-500 text-sm">No log entries available</span>
-        </div>
+      <div v-if="logs.length === 0" class="text-center py-8">
+        <span class="text-gray-500 text-sm">No log entries available</span>
       </div>
     </div>
   </div>

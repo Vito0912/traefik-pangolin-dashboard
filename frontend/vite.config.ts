@@ -17,4 +17,18 @@ export default defineConfig({
     outDir: 'dist',
   },
   base: './',
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/socket.io': {
+        target: 'http://localhost:3000',
+        ws: true,
+        changeOrigin: true,
+      },
+    },
+  },
 })

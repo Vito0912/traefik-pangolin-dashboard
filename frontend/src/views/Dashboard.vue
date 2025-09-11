@@ -4,49 +4,50 @@
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Traefik Dashboard</h1>
 
       <div v-if="stats">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatsCard
-            :value="Math.round(stats.averageResponseTime / 1e6)"
-            unit="ms"
-            description="Average Response Time"
-          />
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div class="lg:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <StatsCard
+                :value="Math.round(stats.averageResponseTime / 1e6)"
+                unit="ms"
+                description="Average Response Time"
+              />
 
-          <StatsCard :value="stats.totalRequests" description="Total Requests" />
+              <StatsCard :value="stats.totalRequests" description="Total Requests" />
 
-          <StatsCard :value="prettyBytes(stats.totalBytes)" description="Total Data" />
+              <StatsCard :value="prettyBytes(stats.totalBytes)" description="Total Data" />
 
-          <StatsCard :value="stats.requestsByService.length" description="Total Services" />
+              <StatsCard :value="stats.requestsByService.length" description="Total Services" />
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
+              <PercentageList
+                title="Requests by Service"
+                :items="serviceItems"
+                :maximum="stats.totalRequests"
+              />
+
+              <PercentageList title="Top Paths" :items="pathItems" :maximum="stats.totalRequests" />
+
+              <PercentageList
+                title="Top User Agents"
+                :items="userAgentItems"
+                :maximum="stats.totalRequests"
+              />
+
+              <PercentageList
+                title="Top Client Hosts"
+                :items="clientItems"
+                :maximum="stats.totalRequests"
+              />
+            </div>
+          </div>
+
+          <div class="lg:col-span-1">
+            <StatusCodePieChart title="HTTP Status Codes" :status-codes="stats.requestsByStatus" />
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <PercentageList
-            title="Requests by Service"
-            :items="serviceItems"
-            :maximum="stats.totalRequests"
-          />
-
-          <PercentageList
-            title="Requests by Status Code"
-            :items="statusItems"
-            :maximum="stats.totalRequests"
-          />
-
-          <PercentageList title="Top Paths" :items="pathItems" :maximum="stats.totalRequests" />
-
-          <PercentageList
-            title="Top User Agents"
-            :items="userAgentItems"
-            :maximum="stats.totalRequests"
-          />
-
-          <PercentageList
-            title="Top Client Hosts"
-            :items="clientItems"
-            :maximum="stats.totalRequests"
-          />
-        </div>
-
-        <!-- Log Table Section -->
         <div class="mt-8">
           <LogTable :logs="logs" title="Recent Log Entries" />
         </div>
@@ -59,6 +60,7 @@
 import StatsCard from '@/components/StatsCard.vue'
 import PercentageList from '@/components/PercentageList.vue'
 import LogTable from '@/components/LogTable.vue'
+import StatusCodePieChart from '@/components/StatusCodePieChart.vue'
 
 import axios from 'axios'
 import { RouterLink, RouterView } from 'vue-router'
@@ -130,12 +132,13 @@ onMounted(async () => {
 })
 
 const socket = io()
-socket.on('connect', () => {
+socket.on('connect', async () => {
   console.log('Connected to WebSocket server')
+  stats.value = (await axios.get('/api/logs/stats')).data
+  stats.value = (await axios.get('/api/logs/stats')).data
 })
 socket.on('newLogs', (data: LogEntry[]) => {
   if (!stats.value) return
-
 
   logs.value = [...data, ...logs.value].slice(0, 2500)
 

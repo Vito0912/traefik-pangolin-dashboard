@@ -1,10 +1,10 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+    class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col h-80"
   >
-    <h3 v-if="title" class="text-lg font-semibold text-gray-800 mb-4">{{ title }}</h3>
+    <h3 v-if="title" class="text-lg font-semibold text-gray-800 mb-4 flex-shrink-0">{{ title }}</h3>
 
-    <div class="space-y-2">
+    <div class="space-y-2 overflow-y-auto flex-1 min-h-0">
       <div
         v-for="item in itemsWithPercentages"
         :key="item.name"

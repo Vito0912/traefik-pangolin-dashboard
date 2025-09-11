@@ -3,6 +3,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import logsRouter from './routes/logs';
 import { logWatcher } from './services/logWatcher';
 import { socketService } from './services/socketService';
@@ -24,15 +25,32 @@ app.use(express.json());
 
 app.use(cors('*'));
 
+const isDevelopment = process.env.NODE_ENV !== 'production';
 const frontendPath = path.join(__dirname, '../../frontend/dist');
-app.use(express.static(frontendPath));
+
+if (isDevelopment) {
+  const viteProxy = createProxyMiddleware({
+    target: 'http://localhost:5173',
+    changeOrigin: true,
+    ws: true,
+    pathFilter: (path) => {
+      return !path.startsWith('/api') && !path.startsWith('/socket.io');
+    }
+  });
+
+  app.use(viteProxy);
+} else {
+  app.use(express.static(frontendPath));
+}
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/logs', logsRouter);
 
-app.get('{*any}', (_req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
+if (!isDevelopment) {
+  app.get('{*any}', (_req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+  });
+}
 
 const port = Number(process.env.PORT) || 3000;
 
@@ -49,6 +67,14 @@ async function startServer() {
     console.log('Initializing database...');
     await initializeDatabase();
     console.log('Database initialized successfully');
+
+    const mode = isDevelopment ? 'development' : 'production';
+    console.log(`Starting server in ${mode} mode...`);
+
+    if (isDevelopment) {
+      console.log('Frontend requests will be proxied to Vite dev server at http://localhost:5173');
+      console.log('Make sure to start the frontend dev server: cd frontend && npm run dev');
+    }
 
     server.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);

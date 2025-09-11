@@ -10,6 +10,7 @@ export interface StatsApiResponse {
 }
 
 export interface LogEntry {
+  id: number;
   ClientAddr?: string;
   ClientHost: string;
   DownstreamContentSize: number;
@@ -36,4 +37,16 @@ export interface LogEntry {
 export interface PercentageListItem {
   name: string;
   value: number;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+}
+
+export interface LogsApiResponse {
+  logs: LogEntry[];
+  pagination: Pagination;
 }

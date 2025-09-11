@@ -49,7 +49,77 @@
         </div>
 
         <div class="mt-8">
-          <LogTable :logs="logs" title="Recent Log Entries" />
+          <LogTable
+            :logs="logs"
+            title="Recent Log Entries"
+            :sort-by="sortBy"
+            :sort-direction="sortDirection"
+            @sort="handleSort"
+          />
+
+          <div v-if="pagination" class="bg-gray-800 rounded-lg border border-gray-700 mt-4 p-4">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div class="flex items-center gap-4">
+                <div class="text-sm text-gray-300">
+                  Showing {{ (pagination.page - 1) * pagination.limit + 1 }} to
+                  {{ Math.min(pagination.page * pagination.limit, pagination.total) }} of
+                  {{ pagination.total }} entries
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <label for="pageSize" class="text-sm text-gray-300">Show:</label>
+                  <select
+                    id="pageSize"
+                    v-model="pageSize"
+                    @change="handlePageSizeChange"
+                    class="bg-gray-700 text-gray-300 border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="250">250</option>
+                    <option value="500">500</option>
+                    <option value="1000">1000</option>
+                  </select>
+                  <span class="text-sm text-gray-300">per page</span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  @click="handlePageChange(currentPage - 1)"
+                  :disabled="currentPage <= 1"
+                  class="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+
+                <div class="flex items-center gap-1">
+                  <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    @click="handlePageChange(page)"
+                    :class="[
+                      'px-3 py-1 text-sm rounded transition-colors',
+                      page === currentPage
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600',
+                    ]"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+
+                <button
+                  @click="handlePageChange(currentPage + 1)"
+                  :disabled="currentPage >= pagination.pages"
+                  class="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -65,11 +135,65 @@ import StatusCodePieChart from '@/components/StatusCodePieChart.vue'
 import axios from 'axios'
 import { RouterLink, RouterView } from 'vue-router'
 import { ref, onMounted, computed } from 'vue'
-import type { StatsApiResponse, LogEntry, PercentageListItem } from '../../../types/apiResponses'
+import type {
+  StatsApiResponse,
+  LogEntry,
+  PercentageListItem,
+  LogsApiResponse,
+  Pagination,
+} from '../../../types/apiResponses'
 import { io } from 'socket.io-client'
 
 const stats = ref<StatsApiResponse | null>(null)
 const logs = ref<LogEntry[]>([])
+const pagination = ref<Pagination | null>(null)
+const sortBy = ref<string[]>(['time'])
+const sortDirection = ref<string[]>(['desc'])
+const currentPage = ref<number>(1)
+const pageSize = ref<number>(100)
+
+const handleSort = (payload: { sortBy: string[]; sortDirection: string[] }) => {
+  sortBy.value = payload.sortBy
+  sortDirection.value = payload.sortDirection
+  currentPage.value = 1
+  fetchLogs()
+}
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchLogs()
+}
+
+const handlePageSizeChange = () => {
+  currentPage.value = 1
+  fetchLogs()
+}
+
+const fetchLogs = async () => {
+  try {
+    const params = new URLSearchParams()
+    params.append('page', currentPage.value.toString())
+    params.append('limit', pageSize.value.toString())
+    if (sortBy.value.length > 0) {
+      params.append('sortBy', sortBy.value.join(','))
+      params.append('direction', sortDirection.value.join(','))
+    }
+
+    const response = (await axios.get(`/api/logs?${params.toString()}`)).data as LogsApiResponse
+    logs.value = response.logs
+    pagination.value = response.pagination
+  } catch (error) {
+    console.error('Error fetching logs:', error)
+  }
+}
+
+const fetchStats = async () => {
+  try {
+    stats.value = (await axios.get('/api/logs/stats')).data
+  } catch (error) {
+    console.error('Error fetching stats:', error)
+  }
+}
 
 // Computed properties for PercentageList data
 const serviceItems = computed((): PercentageListItem[] => {
@@ -122,25 +246,48 @@ const userAgentItems = computed((): PercentageListItem[] => {
     .sort((a, b) => b.value - a.value)
 })
 
-onMounted(async () => {
-  try {
-    stats.value = (await axios.get('/api/logs/stats')).data
-    logs.value = (await axios.get('/api/logs?limit=250')).data.logs
-  } catch (error) {
-    console.error('Error fetching data:', error)
+const visiblePages = computed((): number[] => {
+  if (!pagination.value) return []
+
+  const current = currentPage.value
+  const total = pagination.value.pages
+  const delta = 2
+
+  const range = []
+  const rangeWithDots = []
+
+  for (let i = Math.max(2, current - delta); i <= Math.min(total - 1, current + delta); i++) {
+    range.push(i)
   }
+
+  if (current - delta > 2) {
+    rangeWithDots.push(1, -1)
+  } else {
+    rangeWithDots.push(1)
+  }
+
+  rangeWithDots.push(...range)
+
+  if (current + delta < total - 1) {
+    rangeWithDots.push(-1, total)
+  } else if (total > 1) {
+    rangeWithDots.push(total)
+  }
+
+  return rangeWithDots.filter((page) => page > 0)
+})
+
+onMounted(async () => {
+  await Promise.all([fetchStats(), fetchLogs()])
 })
 
 const socket = io()
 socket.on('connect', async () => {
   console.log('Connected to WebSocket server')
-  stats.value = (await axios.get('/api/logs/stats')).data
-  stats.value = (await axios.get('/api/logs/stats')).data
+  await fetchStats()
 })
 socket.on('newLogs', (data: LogEntry[]) => {
   if (!stats.value) return
-
-  logs.value = [...data, ...logs.value].slice(0, 2500)
 
   const newRequests = data.length
   const newBytes = data.reduce(

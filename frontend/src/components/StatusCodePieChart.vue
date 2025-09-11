@@ -1,8 +1,8 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col h-122"
+    class="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col h-122"
   >
-    <h3 v-if="title" class="text-lg font-semibold text-gray-800 mb-4 flex-shrink-0">{{ title }}</h3>
+    <h3 v-if="title" class="text-lg font-semibold text-white mb-4 flex-shrink-0">{{ title }}</h3>
 
     <div
       v-if="chartData && chartData.datasets[0].data.length > 0"
@@ -22,16 +22,16 @@
             class="w-3 h-3 rounded-full"
             :style="{ backgroundColor: colors[index % colors.length] }"
           ></div>
-          <span class="text-sm text-gray-700">
+          <span class="text-sm text-gray-200">
             {{ item.statusCode }} ({{ item.count }})
-            <span class="text-xs text-gray-500">({{ item.percentage }}%)</span>
+            <span class="text-xs text-gray-400">({{ item.percentage }}%)</span>
           </span>
         </div>
       </div>
     </div>
 
     <div v-else class="text-center py-8">
-      <span class="text-gray-500 text-sm">No status code data available</span>
+      <span class="text-gray-400 text-sm">No status code data available</span>
     </div>
   </div>
 </template>
@@ -108,7 +108,7 @@ const chartData = computed<ChartData<'pie'>>(() => {
         borderColor: statusCodeItems.value.map((item) => item.color),
         borderWidth: 0,
         hoverBorderWidth: 2,
-        hoverBorderColor: '#ffffff',
+        hoverBorderColor: '#1f2937',
       },
     ],
   }
@@ -122,6 +122,11 @@ const chartOptions = computed<ChartOptions<'pie'>>(() => ({
       display: false,
     },
     tooltip: {
+      backgroundColor: '#374151',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      borderColor: '#6b7280',
+      borderWidth: 1,
       callbacks: {
         label: (context) => {
           const label = context.label || ''

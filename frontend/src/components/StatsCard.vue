@@ -1,14 +1,14 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-200"
+    class="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700 hover:shadow-xl hover:border-gray-600 transition-all duration-200"
   >
     <div class="flex flex-col items-center text-center">
-      <div class="text-3xl font-bold text-gray-800 mb-2">
+      <div class="text-3xl font-bold text-white mb-2">
         {{ value }}
-        <span v-if="unit" class="text-lg font-medium text-gray-600 ml-1">{{ unit }}</span>
+        <span v-if="unit" class="text-lg font-medium text-gray-300 ml-1">{{ unit }}</span>
       </div>
 
-      <p class="text-sm text-gray-600 font-medium">{{ description }}</p>
+      <p class="text-sm text-gray-300 font-medium">{{ description }}</p>
     </div>
   </div>
 </template>

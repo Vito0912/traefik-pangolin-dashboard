@@ -1,65 +1,65 @@
 <template>
   <div
-    class="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow duration-200 flex flex-col"
+    class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col"
   >
     <div class="p-6 flex-shrink-0">
-      <h3 v-if="title" class="text-lg font-semibold text-gray-800 mb-4">{{ title }}</h3>
+      <h3 v-if="title" class="text-lg font-semibold text-white mb-4">{{ title }}</h3>
     </div>
 
-    <div class="overflow-x-auto overflow-y-auto max-h-80 flex-1 px-6 pb-6">
+    <div class="overflow-x-auto overflow-y-auto max-h-160 flex-1 px-6 pb-6">
       <table class="min-w-full table-auto">
         <thead>
-          <tr class="border-b border-gray-200">
+          <tr class="border-b border-gray-600">
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Time
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Client Host
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Method
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Service
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Path
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Size
             </th>
             <th
-              class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider"
             >
               Duration
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-600">
           <tr
             v-for="log in logs"
             :key="`${log.time}-${log.ClientHost}-${log.RequestPath}`"
-            class="hover:bg-gray-50 transition-colors duration-150"
+            class="hover:bg-gray-700 transition-colors duration-150"
           >
-            <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+            <td class="px-4 py-3 text-sm text-white whitespace-nowrap">
               {{ formatTime(log.time) }}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700">
+            <td class="px-4 py-3 text-sm text-gray-200">
               {{ log.ClientHost || '-' }}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700">
+            <td class="px-4 py-3 text-sm text-gray-200">
               <span
                 class="px-2 py-1 text-xs font-medium rounded-full"
                 :class="getMethodClass(log.RequestMethod)"
@@ -67,16 +67,21 @@
                 {{ log.RequestMethod || '-' }}
               </span>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700">
-              {{ log.ServiceName || '-' }}
+            <td class="px-4 py-3 text-sm text-gray-200">
+              <span
+                class="px-2 py-1 text-xs font-medium rounded-full"
+                :class="getServiceClass(log.ServiceName)"
+              >
+                {{ getServiceName(log.ServiceName) }}
+              </span>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700 max-w-xs truncate" :title="log.RequestPath">
+            <td class="px-4 py-3 text-sm text-gray-200 max-w-xs truncate" :title="log.RequestPath">
               {{ log.RequestPath || '-' }}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700 text-right">
+            <td class="px-4 py-3 text-sm text-gray-200 text-right">
               {{ formatBytes(log.DownstreamContentSize) }}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-700 text-right">
+            <td class="px-4 py-3 text-sm text-gray-200 text-right">
               {{ formatDuration(log.Duration) }}
             </td>
           </tr>
@@ -84,7 +89,7 @@
       </table>
 
       <div v-if="logs.length === 0" class="text-center py-8">
-        <span class="text-gray-500 text-sm">No log entries available</span>
+        <span class="text-gray-400 text-sm">No log entries available</span>
       </div>
     </div>
   </div>
@@ -147,15 +152,32 @@ const formatDuration = (duration: number): string => {
 
 const getMethodClass = (method: string): string => {
   const methodClasses: Record<string, string> = {
-    GET: 'bg-green-100 text-green-800',
-    POST: 'bg-blue-100 text-blue-800',
-    PUT: 'bg-yellow-100 text-yellow-800',
-    DELETE: 'bg-red-100 text-red-800',
-    PATCH: 'bg-purple-100 text-purple-800',
-    HEAD: 'bg-gray-100 text-gray-800',
-    OPTIONS: 'bg-indigo-100 text-indigo-800',
+    GET: 'bg-green-900 text-green-200',
+    POST: 'bg-blue-900 text-blue-200',
+    PUT: 'bg-yellow-900 text-yellow-200',
+    DELETE: 'bg-red-900 text-red-200',
+    PATCH: 'bg-purple-900 text-purple-200',
+    HEAD: 'bg-gray-700 text-gray-200',
+    OPTIONS: 'bg-indigo-900 text-indigo-200',
   }
 
-  return methodClasses[method?.toUpperCase()] || 'bg-gray-100 text-gray-800'
+  return methodClasses[method?.toUpperCase()] || 'bg-gray-700 text-gray-200'
+}
+
+const getServiceClass = (service?: string): string => {
+  const serviceClasses: Record<string, string> = {
+    undefined: 'bg-red-900/30',
+    'next-service@file': 'bg-green-900/40',
+    'api-service@file': 'bg-blue-900/40',
+  }
+  // @ts-ignore
+  return serviceClasses[service?.toLowerCase()] || 'bg-gray-700 text-gray-200'
+}
+
+const getServiceName = (service?: string): string => {
+  if (!service) return 'Invalid'
+  if (service === 'next-service@file') return 'Pangolin'
+  if (service === 'api-service@file') return 'Pangolin API'
+  return service
 }
 </script>

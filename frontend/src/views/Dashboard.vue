@@ -253,7 +253,6 @@ const fetchPangolinServiceData = async () => {
   try {
     const response = await axios.get('/api/pangolin')
     pangolinServiceData.value = response.data
-    console.log('Pangolin Service Data:', response.data)
   } catch (error) {
     console.error('Error fetching Pangolin service data:', error)
   }

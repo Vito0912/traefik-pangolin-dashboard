@@ -49,13 +49,18 @@
         </div>
 
         <div class="mt-8">
-          <LogFilter :stats="stats" @filter-change="handleFilterChange" />
+          <LogFilter
+            :stats="stats"
+            :get-proper-service-name="getProperServiceName"
+            @filter-change="handleFilterChange"
+          />
 
           <LogTable
             :logs="logs"
             title="Recent Log Entries"
             :sort-by="sortBy"
             :sort-direction="sortDirection"
+            :get-proper-service-name="getProperServiceName"
             @sort="handleSort"
           />
 
@@ -148,6 +153,13 @@ import type {
 } from '../../../types/apiResponses'
 import { io } from 'socket.io-client'
 
+interface PangolinServiceData {
+  fullDomain: string
+  name: string
+  orgId: string
+  resourceId: number
+}
+
 const stats = ref<StatsApiResponse | null>(null)
 const logs = ref<LogEntry[]>([])
 const pagination = ref<Pagination | null>(null)
@@ -155,6 +167,7 @@ const sortBy = ref<string[]>(['time'])
 const sortDirection = ref<string[]>(['desc'])
 const currentPage = ref<number>(1)
 const pageSize = ref<number>(100)
+const pangolinServiceData = ref<PangolinServiceData[]>([])
 const activeFilters = ref<FilterValues>({
   ClientHost: [],
   not_ClientHost: [],
@@ -236,12 +249,38 @@ const fetchStats = async () => {
   }
 }
 
+const fetchPangolinServiceData = async () => {
+  try {
+    const response = await axios.get('/api/pangolin')
+    pangolinServiceData.value = response.data
+    console.log('Pangolin Service Data:', response.data)
+  } catch (error) {
+    console.error('Error fetching Pangolin service data:', error)
+  }
+}
+
+const getProperServiceName = (serviceName: string | undefined): string => {
+  if (!serviceName) return 'Invalid'
+
+  const pangolinService = pangolinServiceData.value.find(
+    (service) => `${service.resourceId}-service@http` === serviceName,
+  )
+  if (serviceName === 'next-service@file') return 'Pangolin'
+  if (serviceName === 'api-service@file') return 'Pangolin API'
+
+  if (pangolinService) {
+    return pangolinService.name || serviceName
+  }
+
+  return serviceName || 'Invalid'
+}
+
 // Computed properties for PercentageList data
 const serviceItems = computed((): PercentageListItem[] => {
   if (!stats.value) return []
   return stats.value.requestsByService
     .map((item) => ({
-      name: item.ServiceName || 'Unknown Service',
+      name: getProperServiceName(item.ServiceName),
       value: item.count,
     }))
     .sort((a, b) => b.value - a.value)
@@ -319,7 +358,7 @@ const visiblePages = computed((): number[] => {
 })
 
 onMounted(async () => {
-  await Promise.all([fetchStats(), fetchLogs()])
+  await Promise.all([fetchStats(), fetchLogs(), fetchPangolinServiceData()])
 })
 
 const socket = io()
@@ -332,7 +371,17 @@ socket.on('newLogs', (data: LogEntry[]) => {
 
   // To prevent to a pagination lag, the log table only get's updated if only sorted by time descending and on the first page
   // TODO: Actually handle the insertion with filters
-  if (sortBy.value[0] === 'time' && sortDirection.value[0] === 'desc' && currentPage.value === 1) {
+  const hasActiveFilters = Object.values(activeFilters.value).some(
+    (filterArray) => filterArray.length > 0,
+  )
+  if (
+    sortBy.value[0] === 'time' &&
+    sortDirection.value[0] === 'desc' &&
+    currentPage.value === 1 &&
+    sortBy.value.length === 1 &&
+    sortDirection.value.length === 1 &&
+    hasActiveFilters === false
+  ) {
     logs.value = [...data, ...logs.value].slice(0, pageSize.value)
     console.log(`Received ${data.length} new logs via WebSocket`)
   }

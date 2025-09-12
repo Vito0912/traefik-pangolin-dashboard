@@ -73,6 +73,7 @@ interface Props {
   title?: string
   sortBy?: string[]
   sortDirection?: string[]
+  getProperServiceName?: (serviceName: string | undefined) => string
 }
 
 interface Emits {
@@ -130,7 +131,7 @@ const formatDuration = (duration: number): string => {
   }
 }
 
-const getMethodClass = (method: string): string => {
+const getMethodClass = (method: string, proto?: string): string => {
   const methodClasses: Record<string, string> = {
     GET: 'bg-green-900 text-green-200',
     POST: 'bg-blue-900 text-blue-200',
@@ -139,6 +140,10 @@ const getMethodClass = (method: string): string => {
     PATCH: 'bg-purple-900 text-purple-200',
     HEAD: 'bg-gray-700 text-gray-200',
     OPTIONS: 'bg-indigo-900 text-indigo-200',
+  }
+
+  if (proto?.toLowerCase() === 'websocket' || proto?.toLowerCase() === 'wss') {
+    return 'bg-teal-900 text-teal-200'
   }
 
   return methodClasses[method?.toUpperCase()] || 'bg-gray-700 text-gray-200'
@@ -155,10 +160,11 @@ const getServiceClass = (service?: string): string => {
 }
 
 const getServiceName = (service?: string): string => {
-  if (!service) return 'Invalid'
-  if (service === 'next-service@file') return 'Pangolin'
-  if (service === 'api-service@file') return 'Pangolin API'
-  return service
+  if (props.getProperServiceName) {
+    return props.getProperServiceName(service)
+  }
+
+  return service || 'Invalid'
 }
 
 const MethodCell = (props: { log: LogEntry }) => {
@@ -167,10 +173,12 @@ const MethodCell = (props: { log: LogEntry }) => {
     {
       class: [
         'px-2 py-1 text-xs font-medium rounded-full',
-        getMethodClass(props.log.RequestMethod),
+        getMethodClass(props.log.RequestMethod, props.log['request_X-Forwarded-Proto']),
       ],
     },
-    props.log.RequestMethod || '-',
+    (props.log['request_X-Forwarded-Proto'] || 'http').includes('http')
+      ? props.log.RequestMethod
+      : props.log['request_X-Forwarded-Proto']?.toUpperCase() || '-',
   )
 }
 

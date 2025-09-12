@@ -4,9 +4,12 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
 import logsRouter from './routes/logs';
+import pangolinRouter from './routes/pangolin';
 import { logWatcher } from './services/logWatcher';
 import { socketService } from './services/socketService';
 import { initializeDatabase } from './db/migration';
+import { pangolinService } from './services/pangolinService';
+
 var cors = require('cors');
 
 const app = express();
@@ -46,6 +49,7 @@ if (isDevelopment) {
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/logs', logsRouter);
+app.use('/api/pangolin', pangolinRouter);
 
 if (!isDevelopment) {
   app.get('{*any}', (_req, res) => {
@@ -67,6 +71,7 @@ async function startServer() {
   try {
     console.log('Initializing database...');
     await initializeDatabase();
+    await pangolinService.updatePangolinServiceData();
     console.log('Database initialized successfully');
 
     const mode = isDevelopment ? 'development' : 'production';

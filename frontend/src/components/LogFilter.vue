@@ -290,7 +290,7 @@
                 :key="serviceName"
                 :value="serviceName"
               >
-                {{ serviceName }}
+                {{ getDisplayServiceName(serviceName) }}
               </option>
             </select>
           </div>
@@ -300,7 +300,7 @@
               :key="value"
               class="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs rounded"
             >
-              {{ value }}
+              {{ getDisplayServiceName(value) }}
               <button @click="removeFilter('ServiceName', value)" class="hover:text-gray-300">
                 ×
               </button>
@@ -323,7 +323,7 @@
                 :key="serviceName"
                 :value="serviceName"
               >
-                {{ serviceName }}
+                {{ getDisplayServiceName(serviceName) }}
               </option>
             </select>
           </div>
@@ -333,7 +333,7 @@
               :key="value"
               class="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs rounded"
             >
-              {{ value }}
+              {{ getDisplayServiceName(value) }}
               <button @click="removeFilter('not_ServiceName', value)" class="hover:text-gray-300">
                 ×
               </button>
@@ -422,7 +422,7 @@
             filter.key.startsWith('not_') ? 'bg-red-600 text-white' : 'bg-blue-600 text-white',
           ]"
         >
-          {{ getFilterLabel(filter.key) }}: {{ filter.value }}
+          {{ getFilterLabel(filter.key) }}: {{ getDisplayFilterValue(filter.key, filter.value) }}
           <button @click="removeFilter(filter.key, filter.value)" class="hover:text-gray-300">
             ×
           </button>
@@ -438,6 +438,7 @@ import type { FilterValues, StatsApiResponse } from '../../../types/apiResponses
 
 interface Props {
   stats?: StatsApiResponse | null
+  getProperServiceName?: (serviceName: string | undefined) => string
 }
 
 const props = defineProps<Props>()
@@ -619,6 +620,26 @@ const handleServiceNameChange = () => {
 const handleNotServiceNameChange = () => {
   autoAddFilter('not_ServiceName', tempFilters.not_ServiceName)
   tempFilters.not_ServiceName = ''
+}
+
+const getDisplayServiceName = (serviceName: string): string => {
+  if (serviceName === 'Invalid') {
+    return 'Invalid (null)'
+  }
+
+  if (props.getProperServiceName) {
+    return props.getProperServiceName(serviceName)
+  }
+
+  return serviceName || 'Invalid'
+}
+
+const getDisplayFilterValue = (filterKey: string, value: string): string => {
+  if (filterKey === 'ServiceName' || filterKey === 'not_ServiceName') {
+    return getDisplayServiceName(value)
+  }
+
+  return value
 }
 
 watch(

@@ -163,7 +163,6 @@ router.get('/', async (req, res) => {
   const total = await totalQuery.select(db.fn.count('id').as('count')).executeTakeFirst();
 
   const ips = await db.selectFrom('logs').select('ClientHost').distinct().execute();
-  console.log(ips.length);
 
   res.json({
     logs,

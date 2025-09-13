@@ -60,7 +60,7 @@
                 :log="log"
                 :column="column"
               />
-              <span v-else>{{ getColumnValue(log, column) }}</span>
+              <span v-else v-html="getColumnValue(log, column)"></span>
             </td>
           </tr>
         </tbody>
@@ -194,6 +194,11 @@ const getMethodClass = (method: string, proto?: string): string => {
   return methodClasses[method?.toUpperCase()] || 'bg-gray-700 text-gray-200'
 }
 
+const formatIp = (ip: string): string => {
+  if (!ip) return '-'
+  return "<a href='https://ipinfo.io/" + ip + "' target='_blank'>" + ip + '</a>'
+}
+
 const getStatusClass = (status: number): string => {
   if (status >= 200 && status < 300) {
     return 'bg-green-900 text-green-200'
@@ -288,6 +293,7 @@ const getAllColumns = (): Record<string, Column> => ({
   ClientHost: {
     key: 'ClientHost',
     header: 'Client Host',
+    formatter: formatIp,
   },
   RequestMethod: {
     key: 'RequestMethod',

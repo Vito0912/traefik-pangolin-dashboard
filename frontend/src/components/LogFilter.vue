@@ -1,6 +1,9 @@
 <template>
-  <div class="bg-gray-800 rounded-lg border border-gray-700 p-6 mb-6">
-    <div class="flex items-center justify-between mb-4">
+  <div class="bg-gray-800 rounded-lg border border-gray-700 py-3 px-6 mb-6">
+    <div
+      class="flex items-center justify-between"
+      :class="{ 'mb-4': hasActiveFilters || isExpanded }"
+    >
       <h3 class="text-lg font-semibold text-white">Filters</h3>
       <div class="flex items-center gap-2">
         <button

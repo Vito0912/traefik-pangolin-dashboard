@@ -60,8 +60,10 @@
             title="Recent Log Entries"
             :sort-by="sortBy"
             :sort-direction="sortDirection"
+            :visible-columns="visibleColumns"
             :get-proper-service-name="getProperServiceName"
             @sort="handleSort"
+            @columns-changed="handleColumnsChanged"
           />
 
           <div v-if="pagination" class="bg-gray-800 rounded-lg border border-gray-700 mt-4 p-4">
@@ -168,6 +170,16 @@ const sortDirection = ref<string[]>(['desc'])
 const currentPage = ref<number>(1)
 const pageSize = ref<number>(100)
 const pangolinServiceData = ref<PangolinServiceData[]>([])
+const visibleColumns = ref<string[]>([
+  'time',
+  'ClientHost',
+  'RequestMethod',
+  'DownstreamStatus',
+  'ServiceName',
+  'RequestPath',
+  'DownstreamContentSize',
+  'Duration',
+])
 const activeFilters = ref<FilterValues>({
   ClientHost: [],
   not_ClientHost: [],
@@ -194,6 +206,11 @@ const handleSort = (payload: { sortBy: string[]; sortDirection: string[] }) => {
   sortDirection.value = payload.sortDirection
   currentPage.value = 1
   fetchLogs()
+}
+
+const handleColumnsChanged = (columns: string[]) => {
+  visibleColumns.value = columns
+  localStorage.setItem('logTableColumns', JSON.stringify(columns))
 }
 
 const handlePageChange = (page: number) => {
@@ -357,6 +374,15 @@ const visiblePages = computed((): number[] => {
 })
 
 onMounted(async () => {
+  const savedColumns = localStorage.getItem('logTableColumns')
+  if (savedColumns) {
+    try {
+      visibleColumns.value = JSON.parse(savedColumns)
+    } catch (e) {
+      console.warn('Failed to parse saved column preferences:', e)
+    }
+  }
+
   await Promise.all([fetchStats(), fetchLogs(), fetchPangolinServiceData()])
 })
 

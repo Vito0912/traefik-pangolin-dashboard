@@ -2,8 +2,25 @@
   <div
     class="bg-gray-800 rounded-lg shadow-lg border border-gray-700 hover:shadow-xl hover:border-gray-600 transition-all duration-200 flex flex-col"
   >
-    <div class="p-6 flex-shrink-0">
-      <h3 v-if="title" class="text-lg font-semibold text-white mb-4">{{ title }}</h3>
+    <div class="py-3 px-6 flex-shrink-0">
+      <div class="flex items-center justify-between">
+        <h3 v-if="title" class="text-lg font-semibold text-white">{{ title }}</h3>
+        <ColumnConfig
+          :selected-columns="selectedColumns"
+          :all-columns="getAllColumns()"
+          :default-columns="[
+            'time',
+            'ClientHost',
+            'RequestMethod',
+            'DownstreamStatus',
+            'ServiceName',
+            'RequestPath',
+            'DownstreamContentSize',
+            'Duration',
+          ]"
+          @columns-changed="handleColumnsChanged"
+        />
+      </div>
     </div>
 
     <div class="overflow-x-auto overflow-y-auto max-h-160 flex-1 px-6 pb-6">
@@ -58,7 +75,8 @@
 
 <script setup lang="ts">
 import type { LogEntry } from '../../../types/apiResponses'
-import { h } from 'vue'
+import ColumnConfig from './ColumnConfig.vue'
+import { h, ref, computed, watch } from 'vue'
 
 interface Column {
   key: string
@@ -74,19 +92,46 @@ interface Props {
   sortBy?: string[]
   sortDirection?: string[]
   getProperServiceName?: (serviceName: string | undefined) => string
+  visibleColumns?: string[]
 }
 
 interface Emits {
   (e: 'sort', payload: { sortBy: string[]; sortDirection: string[] }): void
+  (e: 'columns-changed', columns: string[]): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: 'Log Entries',
   sortBy: () => ['time'],
   sortDirection: () => ['desc'],
+  visibleColumns: () => [
+    'time',
+    'ClientHost',
+    'RequestMethod',
+    'DownstreamStatus',
+    'ServiceName',
+    'RequestPath',
+    'DownstreamContentSize',
+    'Duration',
+  ],
 })
 
 const emit = defineEmits<Emits>()
+
+const selectedColumns = ref([...props.visibleColumns])
+
+watch(
+  () => props.visibleColumns,
+  (newColumns) => {
+    selectedColumns.value = [...newColumns]
+  },
+  { immediate: true },
+)
+
+const handleColumnsChanged = (columns: string[]) => {
+  selectedColumns.value = columns
+  emit('columns-changed', columns)
+}
 
 const formatTime = (timeString: string): string => {
   try {
@@ -149,6 +194,19 @@ const getMethodClass = (method: string, proto?: string): string => {
   return methodClasses[method?.toUpperCase()] || 'bg-gray-700 text-gray-200'
 }
 
+const getStatusClass = (status: number): string => {
+  if (status >= 200 && status < 300) {
+    return 'bg-green-900 text-green-200'
+  } else if (status >= 300 && status < 400) {
+    return 'bg-yellow-900 text-yellow-200'
+  } else if (status >= 400 && status < 500) {
+    return 'bg-orange-900 text-orange-200'
+  } else if (status >= 500) {
+    return 'bg-red-900 text-red-200'
+  }
+  return 'bg-gray-700 text-gray-200'
+}
+
 const getServiceClass = (service?: string): string => {
   const serviceClasses: Record<string, string> = {
     undefined: 'bg-red-900/30',
@@ -182,6 +240,19 @@ const MethodCell = (props: { log: LogEntry }) => {
   )
 }
 
+const StatusCell = (props: { log: LogEntry }) => {
+  return h(
+    'span',
+    {
+      class: [
+        'px-2 py-1 text-xs font-medium rounded-full',
+        getStatusClass(props.log.DownstreamStatus),
+      ],
+    },
+    props.log.DownstreamStatus?.toString() || '-',
+  )
+}
+
 const ServiceCell = (props: { log: LogEntry }) => {
   return h(
     'span',
@@ -192,45 +263,124 @@ const ServiceCell = (props: { log: LogEntry }) => {
   )
 }
 
-const columns: Column[] = [
-  {
+const getAllColumns = (): Record<string, Column> => ({
+  id: {
+    key: 'id',
+    header: 'ID',
+    cellClass: 'text-gray-300 text-xs',
+  },
+  time: {
     key: 'time',
     header: 'Time',
     cellClass: 'text-white whitespace-nowrap',
     formatter: formatTime,
   },
-  {
+  StartUTC: {
+    key: 'StartUTC',
+    header: 'Start UTC',
+    cellClass: 'text-white whitespace-nowrap',
+    formatter: formatTime,
+  },
+  ClientAddr: {
+    key: 'ClientAddr',
+    header: 'Client Address',
+  },
+  ClientHost: {
     key: 'ClientHost',
     header: 'Client Host',
   },
-  {
+  RequestMethod: {
     key: 'RequestMethod',
     header: 'Method',
     component: MethodCell,
   },
-  {
+  DownstreamStatus: {
+    key: 'DownstreamStatus',
+    header: 'Status',
+    component: StatusCell,
+  },
+  ServiceName: {
     key: 'ServiceName',
     header: 'Service',
     component: ServiceCell,
   },
-  {
+  RequestPath: {
     key: 'RequestPath',
     header: 'Path',
     cellClass: 'max-w-xs truncate',
   },
-  {
+  RequestProtocol: {
+    key: 'RequestProtocol',
+    header: 'Protocol',
+  },
+  DownstreamContentSize: {
     key: 'DownstreamContentSize',
     header: 'Size',
     cellClass: 'text-right',
     formatter: formatBytes,
   },
-  {
+  Duration: {
     key: 'Duration',
     header: 'Duration',
     cellClass: 'text-right',
     formatter: formatDuration,
   },
-]
+  RetryAttempts: {
+    key: 'RetryAttempts',
+    header: 'Retries',
+    cellClass: 'text-center',
+  },
+  TLSCipher: {
+    key: 'TLSCipher',
+    header: 'TLS Cipher',
+    cellClass: 'text-xs',
+  },
+  TLSVersion: {
+    key: 'TLSVersion',
+    header: 'TLS Version',
+    cellClass: 'text-xs',
+  },
+  'downstream_Content-Type': {
+    key: 'downstream_Content-Type',
+    header: 'Response Content-Type',
+    cellClass: 'max-w-xs truncate text-xs',
+  },
+  'origin_Content-Type': {
+    key: 'origin_Content-Type',
+    header: 'Origin Content-Type',
+    cellClass: 'max-w-xs truncate text-xs',
+  },
+  'request_User-Agent': {
+    key: 'request_User-Agent',
+    header: 'User Agent',
+    cellClass: 'max-w-xs truncate text-xs',
+  },
+  'request_X-Forwarded-Proto': {
+    key: 'request_X-Forwarded-Proto',
+    header: 'X-Forwarded-Proto',
+    cellClass: 'text-xs',
+  },
+  'request_X-Real-Ip': {
+    key: 'request_X-Real-Ip',
+    header: 'X-Real-IP',
+    cellClass: 'text-xs',
+  },
+  level: {
+    key: 'level',
+    header: 'Log Level',
+    cellClass: 'text-xs',
+  },
+  msg: {
+    key: 'msg',
+    header: 'Message',
+    cellClass: 'max-w-xs truncate',
+  },
+})
+
+const columns = computed(() => {
+  const allColumns = getAllColumns()
+  return selectedColumns.value.map((key: string) => allColumns[key]).filter(Boolean)
+})
 
 const getColumnValue = (log: LogEntry, column: Column): string => {
   const value = (log as any)[column.key]

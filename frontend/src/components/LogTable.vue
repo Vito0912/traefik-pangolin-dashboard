@@ -286,10 +286,6 @@ const getAllColumns = (): Record<string, Column> => ({
     cellClass: 'text-white whitespace-nowrap',
     formatter: formatTime,
   },
-  ClientAddr: {
-    key: 'ClientAddr',
-    header: 'Client Address',
-  },
   ClientHost: {
     key: 'ClientHost',
     header: 'Client Host',
@@ -315,10 +311,6 @@ const getAllColumns = (): Record<string, Column> => ({
     header: 'Path',
     cellClass: 'max-w-xs truncate',
   },
-  RequestProtocol: {
-    key: 'RequestProtocol',
-    header: 'Protocol',
-  },
   DownstreamContentSize: {
     key: 'DownstreamContentSize',
     header: 'Size',
@@ -335,26 +327,7 @@ const getAllColumns = (): Record<string, Column> => ({
     key: 'RetryAttempts',
     header: 'Retries',
     cellClass: 'text-center',
-  },
-  TLSCipher: {
-    key: 'TLSCipher',
-    header: 'TLS Cipher',
-    cellClass: 'text-xs',
-  },
-  TLSVersion: {
-    key: 'TLSVersion',
-    header: 'TLS Version',
-    cellClass: 'text-xs',
-  },
-  'downstream_Content-Type': {
-    key: 'downstream_Content-Type',
-    header: 'Response Content-Type',
-    cellClass: 'max-w-xs truncate text-xs',
-  },
-  'origin_Content-Type': {
-    key: 'origin_Content-Type',
-    header: 'Origin Content-Type',
-    cellClass: 'max-w-xs truncate text-xs',
+    formatter: (value: number) => (value !== undefined ? value.toString() : '-'),
   },
   'request_User-Agent': {
     key: 'request_User-Agent',
@@ -364,22 +337,7 @@ const getAllColumns = (): Record<string, Column> => ({
   'request_X-Forwarded-Proto': {
     key: 'request_X-Forwarded-Proto',
     header: 'X-Forwarded-Proto',
-    cellClass: 'text-xs',
-  },
-  'request_X-Real-Ip': {
-    key: 'request_X-Real-Ip',
-    header: 'X-Real-IP',
-    cellClass: 'text-xs',
-  },
-  level: {
-    key: 'level',
-    header: 'Log Level',
-    cellClass: 'text-xs',
-  },
-  msg: {
-    key: 'msg',
-    header: 'Message',
-    cellClass: 'max-w-xs truncate',
+    formatter: formatIp,
   },
 })
 

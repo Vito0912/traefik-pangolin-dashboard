@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-900 p-6">
-    <div class="max-w-7xl mx-auto">
+    <div class="mx-auto">
       <h1 class="text-3xl font-bold text-white mb-8">Traefik Dashboard</h1>
 
       <div v-if="stats">
@@ -219,9 +219,9 @@ const fetchLogs = async () => {
       if (values.length > 0) {
         let apiKey = key
         if (key === 'requestUserAgent') {
-          apiKey = 'requestUser-Agent'
+          apiKey = 'request_User-Agent'
         } else if (key === 'not_requestUserAgent') {
-          apiKey = 'not_requestUser-Agent'
+          apiKey = 'not_request_User-Agent'
         }
 
         let apiValues = values

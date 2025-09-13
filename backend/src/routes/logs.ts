@@ -74,7 +74,7 @@ router.get('/', async (req, res) => {
     'RequestPath',
     'DownstreamStatus',
     'ServiceName',
-    'requestUser-Agent'
+    'request_User-Agent'
   ];
 
   let totalQuery = db.selectFrom('logs');
@@ -218,8 +218,8 @@ router.get('/stats', async (req, res) => {
     .execute();
   const requestsByUserAgent = await db
     .selectFrom('logs')
-    .select(['Request_User-Agent', db.fn.count('id').as('count')])
-    .groupBy('Request_User-Agent')
+    .select(['request_User-Agent', db.fn.count('id').as('count')])
+    .groupBy('request_User-Agent')
     .orderBy('count', 'desc')
     .limit(limit)
     .execute();

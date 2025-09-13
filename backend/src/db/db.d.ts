@@ -16,8 +16,8 @@ export interface Logs {
   id: Generated<number | null>;
   RequestMethod: string;
   RequestPath: string | null;
-  'requestUser-Agent': string | null;
-  'requestX-Forwarded-Proto': string | null;
+  'request_User-Agent': string | null;
+  'request_X-Forwarded-Proto': string | null;
   RetryAttempts: string;
   ServiceName: string | null;
   StartUTC: string;
